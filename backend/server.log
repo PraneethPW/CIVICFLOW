@@ -3,3 +3,7 @@
 > tsx watch src/server.ts
 
 CivicFlow AI API running on http://localhost:4500
+1:11:19 pm [tsx] change in ./src\server.ts Restarting...
+cCivicFlow AI API running on http://localhost:4500
+1:22:11 pm [tsx] change in ./src\server.ts Restarting...
+cCivicFlow AI API running on http://localhost:4500

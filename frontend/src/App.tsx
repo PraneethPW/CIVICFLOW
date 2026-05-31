@@ -56,10 +56,10 @@ type SpeechWindow = Window & { SpeechRecognition?: new () => SpeechRecognitionLi
 
 const features = [
   ["Eligibility Checker", "Profile-based government service fit scoring.", CheckCircle2],
+  ["AI Assistant", "Ask for service, document, complaint, and tracking help.", Bot],
+  ["Document Assistant", "Dynamic checklist plus OCR pre-verification.", ClipboardCheck],
+  ["Track Applications", "Live status, SLA risk, documents, and complaints.", FileSearch],
   ["AI Recommendations", "OpenRouter-powered guidance with local fallback.", Sparkles],
-  ["Document Checklist", "Dynamic proof lists for every application.", ClipboardCheck],
-  ["OCR Verification", "Upload checks before final submission.", ScanLine],
-  ["Delay Prediction", "SLA risk scoring for smarter planning.", Gauge],
   ["Voice + Multilingual", "Assist citizens in the language they prefer.", Mic]
 ];
 
@@ -67,13 +67,39 @@ const impactStats = [
   ["1.2M+", "citizens routed", "Across certificate, pension, utility, and grievance journeys"],
   ["42%", "fewer rejections", "AI checklist catches missing proofs before submission"],
   ["3.8x", "faster filing", "Guided forms, OCR pre-checks, and auto-generated drafts"],
-  ["18+", "service workflows", "Eligibility, tracking, complaints, delay risk, and more"]
+  ["20+", "service workflows", "Certificates, identity, education, employment, pension, housing, health, and complaints"]
 ];
 
 const testimonials = [
   ["CivicFlow turned a messy certificate process into a clean checklist and draft in minutes.", "Aarav Mehta", "Student applicant"],
   ["The dashboard finally shows what is pending instead of making people guess where they are stuck.", "Nisha Rao", "Service center operator"],
   ["Delay prediction and complaint drafts make the product feel like an actual assistant, not another form portal.", "Imran Khan", "Municipal workflow lead"]
+];
+
+const workflowSteps = [
+  ["1", "Check eligibility", "Enter age, income, address/property signals and see matched services instantly."],
+  ["2", "Choose a service", "Pick certificates, identity, scholarship, employment, pension, housing, health, or complaint support."],
+  ["3", "Prepare documents", "Generate a checklist, upload files, and run OCR verification before submission."],
+  ["4", "Apply and track", "Create an AI draft, follow status, predict delay risk, and raise complaints when needed."]
+];
+
+const serviceHighlights = [
+  "Income Certificate",
+  "Community Certificate",
+  "Residence Certificate",
+  "Birth Certificate",
+  "Death Certificate",
+  "Aadhaar Services",
+  "Voter ID Services",
+  "PAN Card Services",
+  "Scholarship Application",
+  "Employment Registration",
+  "Skill Development",
+  "Senior Citizen Pension",
+  "Disability Pension",
+  "Housing Scheme",
+  "Health Insurance",
+  "Complaint Assistant"
 ];
 
 function useAuth() {
@@ -271,7 +297,9 @@ function Shell({ children, auth }: { children: ReactNode; auth: ReturnType<typeo
   const [open, setOpen] = useState(false);
   const links: Array<[string, string, typeof Home]> = [
     ["/", "Home", Home],
+    ["/eligibility", "Eligibility", CheckCircle2],
     ["/services", "Services", Search],
+    ["/documents", "Documents", ClipboardCheck],
     ["/dashboard", "Dashboard", LayoutDashboard],
     ["/assistant", "Assistant", Bot],
     ["/tracking", "Tracking", FileSearch]
@@ -332,6 +360,38 @@ function HomePage() {
         </div>
       </section>
       <section className="mx-auto max-w-7xl px-3 py-12 sm:px-4 sm:py-16">
+        <div className="mb-12 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="panel shine-card rounded-lg p-5 sm:p-6">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal-300">Clear user flow</p>
+            <h2 className="page-title mt-2 text-3xl font-black md:text-5xl">No guessing what to do next.</h2>
+            <p className="mt-4 leading-7 text-slate-400">CivicFlow is now organized around the actual journey: check eligibility, select a service, prepare documents, create the application, then track or complain.</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Link to="/eligibility" className="neon-button rounded-md px-4 py-3 text-center font-black">Start with eligibility</Link>
+              <Link to="/services" className="ghost-button rounded-md px-4 py-3 text-center font-bold">Browse all services</Link>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {workflowSteps.map(([step, title, detail]) => (
+              <motion.div whileHover={{ y: -4 }} className="glass shine-card rounded-lg p-4" key={title}>
+                <span className="grid h-9 w-9 place-items-center rounded-md bg-teal-300 text-sm font-black text-slate-950">{step}</span>
+                <h3 className="mt-4 text-lg font-black">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{detail}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+        <div className="mb-12 panel rounded-lg p-4 sm:p-6">
+          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Added services</p>
+              <h2 className="page-title mt-2 text-3xl font-black">Every major civic journey in one place.</h2>
+            </div>
+            <Link to="/services" className="ghost-button w-fit rounded-md px-4 py-3 text-sm font-bold">Open service directory</Link>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {serviceHighlights.map((item) => <span key={item} className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-sm text-slate-200">{item}</span>)}
+          </div>
+        </div>
         <div className="mb-8 flex flex-col justify-between gap-3 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-amber-300">Product proof</p>
@@ -464,21 +524,34 @@ function ApplicationStrip({ app }: { app: AppRecord }) {
 
 function EligibilityPanel() {
   const [result, setResult] = useState<EligibilityResult | null>(null);
+  const [summary, setSummary] = useState("");
   async function check(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
     const res = await api.post("/eligibility", { ...data, ownsProperty: data.ownsProperty === "on" });
     setResult(res.data);
+    try {
+      const ai = await api.post("/recommendations", { ...data, ownsProperty: data.ownsProperty === "on" });
+      setSummary(ai.data.summary);
+    } catch {
+      setSummary("AI recommendations will appear after sign in and profile check.");
+    }
   }
-  return <div className="panel rounded-lg p-4 sm:p-5"><h3 className="text-xl font-bold">Eligibility checker</h3><form onSubmit={check} className="mt-4 grid gap-3 md:grid-cols-4"><input name="age" type="number" placeholder="Age" className="rounded-md bg-slate-950/70 px-3 py-3" /><input name="income" type="number" placeholder="Annual income" className="rounded-md bg-slate-950/70 px-3 py-3" /><label className="flex min-h-12 items-center gap-2 rounded-md bg-slate-950/70 px-3"><input name="ownsProperty" type="checkbox" />Owns property</label><button className="neon-button rounded-md px-4 py-3 font-black">Check</button></form>{result && <div className="mt-5 grid gap-3 md:grid-cols-2">{result.eligible.slice(0, 4).map((x) => <div className="rounded-md bg-white/5 p-4" key={x.service.id}><b>{x.service.title}</b><p className="text-sm text-slate-400">{x.reason}</p></div>)}</div>}</div>;
+  return <div className="panel rounded-lg p-4 sm:p-5"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-xl font-bold">Eligibility checker</h3><p className="mt-1 text-sm text-slate-400">Find matching services before starting an application.</p></div>{result && <span className="w-fit rounded-md bg-teal-300 px-3 py-2 text-sm font-black text-slate-950">{result.score}% profile fit</span>}</div><form onSubmit={check} className="mt-4 grid gap-3 md:grid-cols-5"><input name="age" type="number" placeholder="Age" className="rounded-md bg-slate-950/70 px-3 py-3" /><input name="income" type="number" placeholder="Annual income" className="rounded-md bg-slate-950/70 px-3 py-3" /><select name="category" className="rounded-md bg-slate-950/70 px-3 py-3"><option>General citizen</option><option>Student</option><option>Senior citizen</option><option>Person with disability</option><option>Job seeker</option></select><label className="flex min-h-12 items-center gap-2 rounded-md bg-slate-950/70 px-3"><input name="ownsProperty" type="checkbox" />Owns property</label><button className="neon-button rounded-md px-4 py-3 font-black">Check</button></form>{summary && <p className="mt-4 rounded-md bg-teal-300/10 p-3 text-sm leading-6 text-teal-100">{summary}</p>}{result && <div className="mt-5 grid gap-3 md:grid-cols-2">{result.eligible.slice(0, 6).map((x) => <Link to="/services" className="rounded-md bg-white/5 p-4 transition hover:bg-white/10" key={x.service.id}><b>{x.service.title}</b><p className="mt-1 text-sm text-slate-400">{x.reason}</p><span className="mt-3 inline-flex rounded-md border border-white/10 px-3 py-2 text-xs text-slate-300">Open in services</span></Link>)}</div>}</div>;
+}
+
+function EligibilityPage() {
+  return <AppFrame title="Eligibility Checker" kicker="Start here if you are confused"><div className="grid gap-4 lg:grid-cols-[1fr_0.65fr]"><EligibilityPanel /><div className="glass rounded-lg p-4 sm:p-5"><h3 className="text-xl font-bold">How this helps</h3><div className="mt-4 grid gap-3">{["Matches your profile to real services", "Explains why each service is relevant", "Sends you to the correct application flow", "Works for certificates, benefits, identity, jobs, health, housing, and education"].map((item) => <div className="rounded-md bg-white/5 p-3 text-sm text-slate-300" key={item}><CheckCircle2 className="mr-2 inline text-emerald-300" size={15} />{item}</div>)}</div></div></div></AppFrame>;
 }
 
 function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
   useEffect(() => { api.get("/services").then(r => setServices(r.data)); }, []);
-  const filtered = services.filter(s => `${s.title} ${s.department} ${s.category}`.toLowerCase().includes(query.toLowerCase()));
-  return <AppFrame title="Service Directory" kicker="Find the right public service fast"><div className="mb-5 flex items-center gap-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-3 sm:px-4"><Search className="shrink-0 text-slate-400" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search certificates, utilities, benefits..." className="w-full bg-transparent text-sm outline-none sm:text-base" /></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map(service => <ServiceCard key={service.id} service={service} />)}</div></AppFrame>;
+  const categories = ["All", ...Array.from(new Set(services.map((service) => service.category)))];
+  const filtered = services.filter(s => (category === "All" || s.category === category) && `${s.title} ${s.department} ${s.category}`.toLowerCase().includes(query.toLowerCase()));
+  return <AppFrame title="Service Directory" kicker="Choose the service, then create the application"><div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto]"><div className="flex items-center gap-3 rounded-lg border border-white/10 bg-slate-950/70 px-3 py-3 sm:px-4"><Search className="shrink-0 text-slate-400" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search income, Aadhaar, PAN, pension, scholarship..." className="w-full bg-transparent text-sm outline-none sm:text-base" /></div><div className="no-scrollbar flex gap-2 overflow-x-auto">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={`shrink-0 rounded-md px-3 py-3 text-sm font-bold ${category === item ? "bg-teal-300 text-slate-950" : "border border-white/10 bg-white/5 text-slate-300"}`}>{item}</button>)}</div></div><div className="mb-5 grid gap-3 md:grid-cols-4">{features.slice(0, 4).map(([title, desc, Icon]) => <div className="glass rounded-lg p-4" key={title as string}><Icon className="mb-3 text-teal-300" size={20} /><b>{title as string}</b><p className="mt-1 text-xs text-slate-400">{desc as string}</p></div>)}</div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map(service => <ServiceCard key={service.id} service={service} />)}</div></AppFrame>;
 }
 
 function ServiceCard({ service }: { service: Service }) {
@@ -491,6 +564,24 @@ function ServiceCard({ service }: { service: Service }) {
     setCreated(data);
   }
   return <motion.div whileHover={{ y: -5 }} className="panel rounded-lg p-4 sm:p-5"><div className="flex flex-wrap justify-between gap-3"><span className="rounded-md bg-teal-300/15 px-3 py-1 text-sm text-teal-200">{service.category}</span><span className="text-sm text-slate-400">{service.duration}</span></div><h3 className="mobile-safe-text mt-4 text-2xl font-black">{service.title}</h3><p className="mt-2 text-sm text-slate-400">{service.description}</p><div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm"><span>{service.department}</span><b>{service.fee}</b></div><textarea value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder="Why do you need this service? AI will use this in the application draft." className="mt-4 min-h-24 w-full rounded-md border border-white/10 bg-slate-950/70 px-3 py-3 text-sm outline-none focus:border-teal-300" /><div className="mt-4 grid gap-2 sm:grid-cols-2"><button onClick={generate} className="ghost-button rounded-md px-3 py-3 text-sm"><ClipboardCheck className="mr-2 inline" size={15} />Generate checklist</button><button onClick={apply} className="neon-button rounded-md px-3 py-3 text-sm font-bold"><FileText className="mr-2 inline" size={15} />Create application</button></div>{checklist && <ul className="mt-4 space-y-2 text-sm text-slate-300">{checklist.checklist.map((item) => <li className="mobile-safe-text" key={item.id}><CheckCircle2 className="mr-2 inline text-emerald-300" size={15} />{item.name}<span className="ml-2 text-xs text-slate-500">{item.status}</span></li>)}</ul>}{created && <div className="mt-4 rounded-lg bg-emerald-300/10 p-4 text-sm"><b className="text-emerald-200">Application {created.id} created</b><p className="mobile-safe-text mt-2 text-slate-300">{created.draft}</p></div>}</motion.div>;
+}
+
+function DocumentsPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [serviceId, setServiceId] = useState("");
+  const [checklist, setChecklist] = useState<ChecklistResult | null>(null);
+  const [ocr, setOcr] = useState<OcrResult | null>(null);
+  useEffect(() => { api.get("/services").then(r => { setServices(r.data); setServiceId(r.data[0]?.id || ""); }); }, []);
+  async function generateChecklist() {
+    if (!serviceId) return;
+    setChecklist((await api.post("/checklist", { serviceId })).data);
+  }
+  async function verify(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    setOcr((await api.post("/ocr/verify", fd)).data);
+  }
+  return <AppFrame title="Document Assistant" kicker="Prepare documents before applying"><div className="grid gap-4 xl:grid-cols-[1fr_0.85fr]"><div className="panel rounded-lg p-4 sm:p-5"><h3 className="text-xl font-bold"><ClipboardCheck className="mr-2 inline text-teal-300" />Checklist generator</h3><div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]"><select value={serviceId} onChange={(e) => setServiceId(e.target.value)} className="rounded-md bg-slate-950/70 px-4 py-3">{services.map((service) => <option value={service.id} key={service.id}>{service.title}</option>)}</select><button onClick={generateChecklist} className="neon-button rounded-md px-4 py-3 font-black">Generate checklist</button></div>{checklist && <div className="mt-5 grid gap-3 md:grid-cols-2">{checklist.checklist.map((item) => <div className="rounded-md bg-white/5 p-4" key={item.id}><b>{item.name}</b><p className="mt-1 text-sm text-slate-400">{item.required ? "Required" : "Optional"} | {item.status}</p></div>)}</div>}</div><form onSubmit={verify} className="glass rounded-lg p-4 sm:p-5"><h3 className="text-xl font-bold"><ScanLine className="mr-2 inline text-amber-300" />OCR verification</h3><select name="documentType" className="mt-4 w-full rounded-md bg-slate-950/70 px-4 py-3"><option>Aadhaar card</option><option>Income proof</option><option>Community proof</option><option>Address proof</option><option>Birth certificate</option><option>Bank passbook</option><option>Passport photo</option></select><input name="document" type="file" className="mt-3 w-full rounded-md bg-slate-950/70 p-3" /><button className="mt-3 w-full rounded-md bg-amber-300 px-4 py-3 font-black text-slate-950">Verify document</button>{ocr && <div className="mt-4 rounded-lg bg-white/5 p-4"><b>{ocr.verified ? "Document ready" : "Needs review"} | {ocr.confidence}% confidence</b><div className="mt-3 grid gap-2">{ocr.checks.map((check) => <span key={check.label} className={`rounded-md px-3 py-2 text-sm ${check.ok ? "bg-emerald-300/15 text-emerald-100" : "bg-rose-300/15 text-rose-100"}`}>{check.ok ? "Pass" : "Fix"}: {check.label}</span>)}</div></div>}</form></div></AppFrame>;
 }
 
 function AssistantPage() {
@@ -546,7 +637,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/auth" element={<AuthPage auth={auth} />} />
           <Route path="/dashboard" element={<Protected auth={auth}><Dashboard auth={auth} /></Protected>} />
+          <Route path="/eligibility" element={<Protected auth={auth}><EligibilityPage /></Protected>} />
           <Route path="/services" element={<Protected auth={auth}><ServicesPage /></Protected>} />
+          <Route path="/documents" element={<Protected auth={auth}><DocumentsPage /></Protected>} />
           <Route path="/assistant" element={<Protected auth={auth}><AssistantPage /></Protected>} />
           <Route path="/tracking" element={<Protected auth={auth}><TrackingPage /></Protected>} />
         </Routes>

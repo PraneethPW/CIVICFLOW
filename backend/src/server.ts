@@ -266,8 +266,12 @@ app.get("/api/applications/:id", auth, (req, res) => {
   res.json(record);
 });
 
-app.patch("/api/applications/:id/documents/:documentId", auth, (req: AuthedRequest, res) => {
-  const record = applications.get(String(req.params.id));
+app.patch("/api/applications/:id/documents/:documentId", auth, async (req: AuthedRequest, res) => {
+  let record = applications.get(String(req.params.id));
+  if (!record && pool) {
+    const rows = await pool.query("select payload from civic_applications where id=$1 and user_id=$2", [req.params.id, req.user!.id]);
+    record = rows.rows[0]?.payload as ApplicationRecord | undefined;
+  }
   if (!record || record.userId !== req.user!.id) return res.status(404).json({ message: "Application not found" });
   record.documents = record.documents.map((doc) => doc.id === req.params.documentId ? { ...doc, status: req.body.status || "verified" } : doc);
   const verified = record.documents.filter((doc) => doc.status === "verified").length;
@@ -277,11 +281,16 @@ app.patch("/api/applications/:id/documents/:documentId", auth, (req: AuthedReque
     record.timeline = buildTimeline("Officer review");
   }
   applications.set(record.id, record);
+  if (pool) await pool.query("update civic_applications set status=$1, payload=$2 where id=$3 and user_id=$4", [record.status, record, record.id, req.user!.id]);
   res.json(record);
 });
 
-app.get("/api/dashboard", auth, (req: AuthedRequest, res) => {
-  const userApps = [...applications.values()].filter((item) => item.userId === req.user!.id);
+app.get("/api/dashboard", auth, async (req: AuthedRequest, res) => {
+  let userApps = [...applications.values()].filter((item) => item.userId === req.user!.id);
+  if (pool) {
+    const rows = await pool.query("select payload from civic_applications where user_id=$1 order by created_at desc", [req.user!.id]);
+    userApps = rows.rows.map((row) => row.payload as ApplicationRecord);
+  }
   const missingDocs = userApps.reduce((sum, item) => sum + item.documents.filter((doc) => doc.status !== "verified").length, 0);
   const highestRisk = userApps.reduce((risk, item) => Math.max(risk, item.risk), 0);
   res.json({
@@ -384,7 +393,34 @@ app.get("/api/admin/overview", auth, (req: AuthedRequest, res) => {
   });
 });
 
-app.get("/api/meta", (_req, res) => res.json({ languages, features: ["Authentication", "Dashboard", "Eligibility", "Service Directory", "AI Recommendations", "OCR", "Delay Prediction", "Voice Assistant"] }));
+app.get("/api/meta", (_req, res) => res.json({
+  languages,
+  features: [
+    "Eligibility Checker",
+    "AI Assistant",
+    "Document Assistant",
+    "Track Applications",
+    "Income Certificate",
+    "Community Certificate",
+    "Residence Certificate",
+    "Birth Certificate",
+    "Death Certificate",
+    "Aadhaar Services",
+    "Voter ID Services",
+    "PAN Card Services",
+    "Scholarship Application",
+    "Employment Registration",
+    "Skill Development",
+    "Senior Citizen Pension",
+    "Disability Pension",
+    "Housing Scheme",
+    "Health Insurance",
+    "Complaint Assistant",
+    "OCR Verification",
+    "Delay Prediction",
+    "Voice Assistant"
+  ]
+}));
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof z.ZodError) return res.status(400).json({ message: "Invalid request", details: err.issues });
