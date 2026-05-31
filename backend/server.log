@@ -1,0 +1,5 @@
+
+> backend@1.0.0 dev
+> tsx watch src/server.ts
+
+CivicFlow AI API running on http://localhost:4500
