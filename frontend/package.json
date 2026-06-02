@@ -6,11 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:local": "tsc -b && vite build --mode development",
+    "build:production": "tsc -b && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
-    "android:sync": "vite build --mode android && cap sync android",
+    "android:sync": "npm run android:sync:local",
+    "android:sync:local": "vite build --mode android-local && cap sync android",
+    "android:sync:production": "vite build --mode android-production && cap sync android",
     "android:open": "cap open android",
-    "android:build": "vite build --mode android && cap sync android && cd android && gradlew assembleDebug"
+    "android:build": "npm run android:build:local",
+    "android:build:local": "vite build --mode android-local && cap sync android && cd android && gradlew assembleDebug",
+    "android:build:production": "vite build --mode android-production && cap sync android && cd android && gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
