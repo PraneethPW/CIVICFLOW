@@ -11,17 +11,21 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "android:sync": "npm run android:sync:local",
-    "android:sync:local": "vite build --mode android-local && cap sync android",
-    "android:sync:production": "vite build --mode android-production && cap sync android",
+    "android:sync:local": "node scripts/android.mjs local sync",
+    "android:sync:production": "node scripts/android.mjs production sync",
     "android:open": "cap open android",
     "android:build": "npm run android:build:local",
-    "android:build:local": "vite build --mode android-local && cap sync android && cd android && gradlew assembleDebug",
-    "android:build:production": "vite build --mode android-production && cap sync android && cd android && gradlew assembleDebug"
+    "android:build:local": "node scripts/android.mjs local build",
+    "android:build:production": "node scripts/android.mjs production build",
+    "android:bundle:production": "node scripts/android.mjs production release"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "axios": "^1.16.1",
@@ -49,5 +53,8 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
+  },
+  "engines": {
+    "node": ">=24 <25"
   }
 }

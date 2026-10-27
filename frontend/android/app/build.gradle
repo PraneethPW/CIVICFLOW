@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+def civicflowProperties = new Properties()
+def civicflowFile = rootProject.file('civicflow.local.properties')
+if (civicflowFile.exists()) civicflowFile.withInputStream { civicflowProperties.load(it) }
+
 android {
     namespace = "com.civicflow.ai"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +11,9 @@ android {
         applicationId "com.civicflow.ai"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        manifestPlaceholders = [usesCleartextTraffic: civicflowProperties.getProperty("civicflow.cleartext", "false")]
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

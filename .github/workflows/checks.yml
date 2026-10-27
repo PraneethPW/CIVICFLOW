@@ -1,0 +1,65 @@
+name: Build and workflow checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  web-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm run install:all
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: civicflow
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: civicflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U civicflow -d civicflow_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --prefix backend
+      - run: npm test
+        env:
+          TEST_DATABASE_URL: postgresql://civicflow:test-only-password@localhost:5432/civicflow_test
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm ci --prefix frontend
+      - run: npm run android:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: civicflow-android-local-debug
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

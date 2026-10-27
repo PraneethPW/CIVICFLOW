@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*.local
+*.sqlite*
+backend/data/
+backend/uploads/
+.DS_Store
+*.jks
+*.keystore
+frontend/android/civicflow.local.properties
+
+backend/*.traineddata*
