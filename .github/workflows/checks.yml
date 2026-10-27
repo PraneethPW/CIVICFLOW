@@ -44,7 +44,11 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://civicflow:test-only-password@localhost:5432/civicflow_test
   android:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,6 +67,6 @@ jobs:
       - run: npm run android:build
       - uses: actions/upload-artifact@v4
         with:
-          name: civicflow-android-local-debug
+          name: civicflow-android-local-debug-${{ runner.os }}
           path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
